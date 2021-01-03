@@ -17,7 +17,7 @@ void setTft(lgfx::LGFX_SPI<LGFX_Config> *tft, lgfx::Panel_ILI9488 *panel)
   panel->pwm_ch_bl = -1;
   panel->backlight_level = true;
   panel->invert = false;
-  panel->rgb_order = true;
+  panel->rgb_order = false;
   panel->memory_width = ESP32_TSC_9488_LCD_WIDTH;
   panel->memory_height = ESP32_TSC_9488_LCD_HEIGHT;
   panel->panel_width = ESP32_TSC_9488_LCD_WIDTH;
