@@ -22,6 +22,8 @@ void SimHubReader::tick(unsigned long  nowMs) {
 
 void SimHubReader::begin() {
   EEBlue.begin("W7N-DASH");
+
+  initProperties();
 }
 
 void SimHubReader::processMessage(unsigned long  nowMs) {
@@ -46,12 +48,11 @@ void SimHubReader::processMessage(unsigned long  nowMs) {
     case 'Q':
       setAbsLevel(nowMs);
       break;
+    case 'M':
+      setMapLevel(nowMs);
+      break;
     case 'I':
       setBrakeBiasLevel(nowMs);
-      break;
-    case 't':
-      cleanBufferDigits(2);
-      setTcAndAbs();
       break;
     case 'P':
       cleanBufferDigits(2);
@@ -132,31 +133,132 @@ void SimHubReader::setFlags() {
   pitLimiter = buf[3] != '0';
 }
 
-void SimHubReader::setTcAndAbs() {
-  tcActive = buf[1] != '0';
-  absActive = buf[2] != '0';
-}
-
 void SimHubReader::setTcLevel(unsigned long ms) {
-  int newTcLevel = atoi(&buf[1]);
-
-  if (newTcLevel != tcLevel) {
-    tcLevel = newTcLevel;
-  }
+  tcLevel = atoi(&buf[1]);
 }
 
+void SimHubReader::setMapLevel(unsigned long ms) {
+  mapLevel = atoi(&buf[1]);
+}
 void SimHubReader::setAbsLevel(unsigned long ms) {
-  int newAbsLevel = abs(atoi(&buf[1]));
-
-  if (newAbsLevel != absLevel) {
-    absLevel = newAbsLevel;
-  }
+  absLevel = abs(atoi(&buf[1]));
 }
 
 void SimHubReader::setBrakeBiasLevel(unsigned long ms) {
-  float newBrakeBias = atof(&buf[1]);
+  brakeBias = atof(&buf[1]);
+}
 
-  if (newBrakeBias != brakeBias) {
-    brakeBias = newBrakeBias;
-  }
+void SimHubReader::initProperties() {
+  gear = '7';
+  rpm = 0;
+  strcpy(spd, "227");
+  lapDelta = -10;
+  strcpy(lapTime, "18:88.888");
+  strcpy(lastLapTime, "--:--.--");
+  strcpy(bestLapTime, "18:88.888");
+  gapAhead = -1.0;
+  gapBehind = 2.0;
+  yellowFlag = false;
+  blueFlag = false;
+  pitLimiter = false;
+  tcLevel = 2;
+  absLevel = 3;
+  mapLevel = 3;
+  drsAvailable = false;
+  drsActive = false;
+  brakeBias = 52;
+}
+
+char SimHubReader::getGear() {
+  return gear;
+}
+
+char* SimHubReader::getLapTime() {
+  return lapTime;
+}
+
+char* SimHubReader::getLastLapTime() {
+  return lastLapTime;
+}
+
+char* SimHubReader::getBestLapTime() {
+  return bestLapTime;
+}
+char* SimHubReader::getSpeed() {
+  return spd;
+}
+
+int SimHubReader::getRpm() {
+  return rpm;
+}
+int SimHubReader::getTcLevel() {
+  return tcLevel;
+}
+int SimHubReader::getAbsLevel() {
+  return absLevel;
+}
+int SimHubReader::getMapLevel() {
+  return mapLevel;
+}
+
+int SimHubReader::getPosition() {
+  return position;
+}
+int SimHubReader::getLapNumber() {
+  return lapNumber;
+}
+bool SimHubReader::isYellowFlag() {
+  return yellowFlag;
+}
+bool SimHubReader::isBlueFlag() {
+  return blueFlag;
+}
+bool SimHubReader::isPitLimiter() {
+  return pitLimiter;
+}
+bool SimHubReader::isDrsAvailable() {
+  return drsAvailable;
+}
+bool SimHubReader::isDrsActive() {
+  return drsActive;
+}
+
+float SimHubReader::getLapDelta() {
+  return lapDelta;
+}
+float SimHubReader::getGapAhead() {
+  return gapAhead;
+}
+float SimHubReader::getGapBehind() {
+  return gapBehind;
+}
+float SimHubReader::getBrakeBias() {
+  return brakeBias;
+}
+float SimHubReader::getFuelPercentage() {
+  return fuelPercentage;
+}
+float SimHubReader::getTyreTempFL() {
+  return tyreTempFL;
+}
+float SimHubReader::getTyreTempFR() {
+  return tyreTempFR;
+}
+float SimHubReader::getTyreTempRL() {
+  return tyreTempRL;
+}
+float SimHubReader::getTyreTempRR() {
+  return tyreTempRR;
+}
+float SimHubReader::getTyrePressureFL() {
+  return tyrePressureFL;
+}
+float SimHubReader::getTyrePressureFR() {
+  return tyrePressureFR;
+}
+float SimHubReader::getTyrePressureRL() {
+  return tyrePressureRL;
+}
+float SimHubReader::getTyrePressureRR() {
+  return tyrePressureRR;
 }

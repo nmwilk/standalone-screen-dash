@@ -5,11 +5,11 @@
 #define SCREEN_WIDTH 480  // screen width
 #define SCREEN_HEIGHT 320  // screen height
 
-#define CELL_WIDTH ((SCREEN_WIDTH) / 10)
+#define CELL_WIDTH ((SCREEN_WIDTH) / 9)
 #define CELL_HEIGHT ((SCREEN_HEIGHT) / 4)
 
 #define CELL_BORDER_THICKNESS 2
-#define CELL_PADDING 4
+#define CELL_PADDING 2
 
 #define REVS_LED_COUNT 16
 #define STATUS_LED_COUNT 16
@@ -20,7 +20,7 @@ static lgfx::LGFX_SPI<LGFX_Config> tft;
 static LGFX_Sprite sprite(&tft);
 static lgfx::Panel_ILI9488 panel;
 
-int oldGear = -1;
+char oldGear = '@';
 int oldSpeed = -1;
 int oldTime = -1;
 
@@ -55,6 +55,8 @@ const byte RevColors[8][4] = {
 CRGB leds[REVS_LED_COUNT + STATUS_LED_COUNT];
 SimHubReader simHubReader;
 
+char drawCharBuf[2];
+
 void setup() {
   Serial.begin(115200);
   simHubReader.begin();
@@ -68,25 +70,24 @@ void setup() {
   drawCell(2, 2, "Gear", 4, 1, TFT_WHITE);
   drawCell(2, 1, "Delta", 4, 0, TFT_WHITE);
   drawCell(2, 1, "Fuel", 4, 3, TFT_WHITE);
-  
-  drawCell(3, 1, "Lap", 6, 0, TFT_GREEN);
-  drawCell(1, 1, "Map", 9, 0, TFT_RED);
-  drawCell(4, 1, "Last Lap", 6, 1, TFT_WHITE);
-  drawCell(4, 1, "Best Lap", 6, 2, TFT_GREEN);
-  
+
+  drawCell(3, 1, "Lap Time", 6, 0, TFT_GREEN);
+  drawCell(3, 1, "Last Lap", 6, 1, TFT_WHITE);
+  drawCell(3, 1, "Best Lap", 6, 2, TFT_GREEN);
+
   drawCell(2, 1, "Speed", 2, 1, TFT_WHITE);
 
   drawCell(1, 1, "Pos", 0, 1, TFT_WHITE);
   drawCell(1, 1, "Lap", 1, 1, TFT_WHITE);
   drawCell(1, 1, "DRS", 2, 0, TFT_ORANGE);
-  drawCell(1, 1, "P2P", 3, 0, TFT_YELLOW);
+  drawCell(1, 1, "P2P", 3, 0, TFT_ORANGE);
 
+  drawCell(3, 2, "Tyres", 0, 2, TFT_ORANGE);
 
-  drawCell(4, 2, "Tyres", 0, 2, TFT_ORANGE);
-
-  drawCell(2, 1, "Bias", 6, 3, TFT_RED);
-  drawCell(1, 1, "TC", 8, 3, TFT_YELLOW);
-  drawCell(1, 1, "ABS", 9, 3, TFT_ORANGE);
+  drawCell(2, 1, "Bias", 7, 3, TFT_RED);
+  drawCell(1, 1, "Map", 6, 3, TFT_RED);
+  drawCell(1, 1, "TC", 3, 2, TFT_YELLOW);
+  drawCell(1, 1, "ABS", 3, 3, TFT_ORANGE);
 
   FastLED.addLeds<NEOPIXEL, 18>(leds, REVS_LED_COUNT + STATUS_LED_COUNT);
 }
@@ -96,14 +97,27 @@ void loop() {
 
   simHubReader.tick(ms);
 
-  int newGear = (ms % 10000) / 1000;
-  drawNumber(newGear, &oldGear, &fonts::Font8, 1, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+  drawGear();
+  drawSpeed();
 
-  int newSpeed = (ms % 10000) / 10;
-  //  drawNumber(newSpeed, &oldSpeed, &fonts::Orbitron_Light_32, 1, 10, 10);
+  drawLapDelta();
 
-  //  drawNumber(newSpeed, &oldTime, &fonts::Orbitron_Light_32, 1, 300, 10);
+  drawGaps();
 
+  drawCellValue(3, 1, simHubReader.getLapTime(), 6, 0, TFT_WHITE, false, -3);
+  drawCellValue(3, 1, simHubReader.getLastLapTime(), 6, 1, TFT_WHITE, false, -3);
+  drawCellValue(3, 1, simHubReader.getBestLapTime(), 6, 2, TFT_WHITE, false, -3);
+
+  drawCellValueInt(1, 1, simHubReader.getTcLevel(), 3, 2, TFT_WHITE, true, 0);
+  drawCellValueInt(1, 1, simHubReader.getTcLevel(), 3, 3, TFT_WHITE, true, 0);
+  drawCellValueInt(1, 1, simHubReader.getMapLevel(), 6, 3, TFT_WHITE, true, 0);
+
+  drawCellValueFloat(2, 1, simHubReader.getBrakeBias(), 7, 3, TFT_WHITE, false, 0, 2);
+
+  drawTyres();
+
+  drawCellValueInt(1, 1, simHubReader.getPosition(), 0, 1, TFT_WHITE, true, 0);
+  drawCellValueInt(1, 1, simHubReader.getLapNumber(), 1, 1, TFT_WHITE, true, 0);
 
   drawRevBar(ms, ms % 1000 / 10);
   drawStatusLights(ms);
@@ -111,18 +125,60 @@ void loop() {
   FastLED.show();
 }
 
-void drawNumber(int newValue, int *oldValue, const lgfx::BaseFont* font, float fontScale, int posX, int posY) {
+void drawTyres() {
+  
+}
+
+void drawGaps() {
+  drawCellValueFloat(2, 1, simHubReader.getGapAhead(), 0, 0, TFT_WHITE, false, -14, 2);
+  drawCellValueFloat(2, 1, simHubReader.getGapBehind(), 0, 0, TFT_WHITE, false, 12, 2);
+}
+
+void drawGear() {
+  char newGear = simHubReader.getGear();
+  int x;
+  int y;
+  fillXY(2, 2, 4, 1, -6, &x, &y);
+  drawChar(newGear, &oldGear, 8, 1, x, y);
+}
+
+void drawSpeed() {
+  drawCellValue(2, 1, simHubReader.getSpeed(), 2, 1, TFT_WHITE, true, 0);
+}
+
+void drawLapDelta() {
+  float lapDelta = simHubReader.getLapDelta();
+  drawCellValueFloat(2, 1, lapDelta, 4, 0, lapDelta < 0 ? TFT_GREEN : TFT_RED, false, -3, 2);
+}
+
+void drawChar(char newValue, char *oldValue, int font, float fontScale, int posX, int posY) {
   if (*oldValue != newValue) {
     tft.setTextDatum(textdatum_t::middle_center);
-    tft.setFont(font);
+    tft.setTextFont(font);
     tft.setTextSize(fontScale);
 
     tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    tft.drawNumber(newValue, posX, posY);
+    sprintf(drawCharBuf, "%c", newValue);
+
+    tft.drawString(drawCharBuf, posX, posY);
 
     *oldValue = newValue;
   }
 }
+//
+//void drawNumber(int newValue, int *oldValue, const lgfx::BaseFont* font, float fontScale, int posX, int posY) {
+//  if (*oldValue != newValue) {
+//    tft.setTextDatum(textdatum_t::middle_center);
+////    tft.setFont(font);
+//tft.setTextFont(9);
+//    tft.setTextSize(fontScale);
+//
+//    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+//    tft.drawNumber(newValue, posX, posY);
+//
+//    *oldValue = newValue;
+//  }
+//}
 
 long firstRevsChangeTime = 0;
 
@@ -164,8 +220,8 @@ void drawStatusLights(long ms) {
 }
 
 void drawCell(int width, int height, const char* label, int atX, int atY, int color) {
-  int x = (atX * CELL_WIDTH + CELL_PADDING - CELL_BORDER_THICKNESS / 2) - CELL_PADDING /2;
-  int y = (atY * CELL_HEIGHT + CELL_PADDING - CELL_BORDER_THICKNESS / 2) - CELL_PADDING/2;
+  int x = (atX * CELL_WIDTH + CELL_PADDING - CELL_BORDER_THICKNESS / 2) - CELL_PADDING / 2;
+  int y = (atY * CELL_HEIGHT + CELL_PADDING - CELL_BORDER_THICKNESS / 2) - CELL_PADDING / 2;
   int w = (width * CELL_WIDTH) - (CELL_PADDING * 2);
   int h = (height * CELL_HEIGHT) - CELL_PADDING;
   int topLineWidth = max(0, (w - 10 * (int)strlen(label)) / 2);
@@ -181,4 +237,52 @@ void drawCell(int width, int height, const char* label, int atX, int atY, int co
   tft.fillRect(x, y, CELL_BORDER_THICKNESS, h, color);
   tft.fillRect(x + w, y, CELL_BORDER_THICKNESS, h, color);
   tft.fillRect(x + CELL_BORDER_THICKNESS, y + h - CELL_BORDER_THICKNESS, w - CELL_BORDER_THICKNESS, CELL_BORDER_THICKNESS, color);
+}
+
+void drawCellValue(int width, int height, const char* value, int atX, int atY, int color, bool large, int yOffset) {
+  int x;
+  int y;
+
+  fillXY(width, height, atX, atY, yOffset, &x, &y);
+  configureText(large, color);
+
+  tft.drawString(value, x, y);
+}
+
+void drawCellValueInt(int width, int height, int value, int atX, int atY, int color, bool large, int yOffset) {
+  if (value != NO_INT) {
+    int x;
+    int y;
+
+    fillXY(width, height, atX, atY, yOffset, &x, &y);
+
+    configureText(large, color);
+    tft.drawNumber(value, x, y);
+  }
+}
+
+void drawCellValueFloat(int width, int height, float value, int atX, int atY, int color, bool large, int yOffset, int decPlaces) {
+  if (value != NO_FLOAT) {
+    int x;
+    int y;
+
+    fillXY(width, height, atX, atY, yOffset, &x, &y);
+    configureText(large, color);
+
+    tft.drawFloat(value, decPlaces, x, y + yOffset);
+  }
+}
+
+void fillXY(int width, int height, int atX, int atY, int yOffset, int *px, int *py) {
+  int w = (width * CELL_WIDTH) - (CELL_PADDING * 2);
+  int h = (height * CELL_HEIGHT);
+  *px = ((atX * CELL_WIDTH + CELL_PADDING - CELL_BORDER_THICKNESS / 2) - CELL_PADDING / 2) + w / 2;
+  *py = (atY * CELL_HEIGHT + CELL_PADDING * 4) + h / 2;
+}
+
+void configureText(bool large, int color) {
+  tft.setTextFont(large ? 6 : 4);
+  tft.setTextSize(1);
+  tft.setTextDatum(textdatum_t::middle_center);
+  tft.setTextColor(color, TFT_BLACK);
 }
