@@ -1,8 +1,15 @@
 #include "tft.h"
+#include "simhubreader.h"
 #include <FastLED.h>
 
 #define SCREEN_WIDTH 480  // screen width
 #define SCREEN_HEIGHT 320  // screen height
+
+#define CELL_WIDTH (SCREEN_WIDTH / 6)
+#define CELL_HEIGHT (SCREEN_HEIGHT / 4)
+
+#define CELL_BORDER_THICKNESS 2
+#define CELL_PADDING 4
 
 #define REVS_LED_COUNT 16
 #define STATUS_LED_COUNT 16
@@ -17,8 +24,10 @@ int oldGear = -1;
 int oldSpeed = -1;
 int oldTime = -1;
 
-const unsigned int BG_COLOR = tft.color565(0, 0, 0);
-const unsigned int GEAR_COLOR = tft.color565(255, 255, 255);
+#define COLOR_BG TFT_BLACK
+#define COLOR_TEXT TFT_WHITE
+
+const unsigned int GEAR_COLOR = tft.color565(0, 0, 0);
 const unsigned int RED_COLOR = tft.color565(255, 0, 0);
 
 const byte ColorRed[3] = {100, 0, 0};
@@ -44,34 +53,51 @@ const byte RevColors[8][4] = {
 
 
 CRGB leds[REVS_LED_COUNT + STATUS_LED_COUNT];
+SimHubReader simHubReader;
 
 void setup() {
   Serial.begin(115200);
+  simHubReader.begin();
 
   setTft(&tft, &panel);
   tft.begin();
-  tft.fillScreen(BG_COLOR);
+  tft.fillScreen(TFT_BLACK);
+
+  drawCell(1, 1, "Delta", 0, 0, TFT_WHITE);
+  drawCell(1, 1, "SPD", 1, 0, TFT_WHITE);
+  drawCell(2, 2, "GEAR", 2, 0, TFT_WHITE);
+  drawCell(1, 1, "LAP TIME", 4, 0, TFT_WHITE);
+  drawCell(1, 1, "SPD", 5, 0, TFT_WHITE);
+
+  drawCell(1, 1, "SPD", 0, 1, TFT_WHITE);
+  drawCell(1, 1, "T-FL", 0, 2, TFT_WHITE);
+  drawCell(1, 1, "T-RL", 0, 3, TFT_WHITE);
+  drawCell(1, 1, "T-RF", 1, 2, TFT_WHITE);
+  drawCell(1, 1, "T-RR", 1, 3, TFT_WHITE);
+  drawCell(1, 1, "T-RL", 5, 2, TFT_WHITE);
+  drawCell(1, 1, "T-RR", 5, 3, TFT_WHITE);
 
   FastLED.addLeds<NEOPIXEL, 18>(leds, REVS_LED_COUNT + STATUS_LED_COUNT);
 }
 
 void loop() {
   int ms = millis();
+
+  simHubReader.tick(ms);
+
   int newGear = (ms % 10000) / 1000;
   drawNumber(newGear, &oldGear, &fonts::Font8, 1, SCREEN_WIDTH / 2 - 28, 20);
 
   int newSpeed = (ms % 10000) / 10;
-  drawNumber(newSpeed, &oldSpeed, &fonts::Orbitron_Light_32, 1, 10, 10);
+  //  drawNumber(newSpeed, &oldSpeed, &fonts::Orbitron_Light_32, 1, 10, 10);
 
-  drawNumber(newSpeed, &oldTime, &fonts::Orbitron_Light_32, 1, 300, 10);
+  //  drawNumber(newSpeed, &oldTime, &fonts::Orbitron_Light_32, 1, 300, 10);
 
 
   drawRevBar(ms, ms % 1000 / 10);
   drawStatusLights(ms);
 
   FastLED.show();
-
-  delay(30);
 }
 
 void drawNumber(int newValue, int *oldValue, const lgfx::RLEfont* font, float fontScale, int posX, int posY) {
@@ -79,11 +105,7 @@ void drawNumber(int newValue, int *oldValue, const lgfx::RLEfont* font, float fo
     tft.setFont(font);
     tft.setTextSize(fontScale);
 
-        tft.setTextColor(BG_COLOR);
-    tft.setCursor(posX, posY);
-    tft.print(*oldValue);
-    
-    tft.setTextColor(TFT_WHITE);
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
     tft.setCursor(posX, posY);
     tft.print(newValue);
 
@@ -135,15 +157,31 @@ void drawNumber(int newValue, int *oldValue, const lgfx::GFXfont* font, float fo
     tft.setFont(font);
     tft.setTextSize(fontScale);
 
-    tft.setTextColor(BG_COLOR);
-    tft.setCursor(posX, posY);
-    tft.print(*oldValue);
-
-    tft.setTextColor(TFT_WHITE);
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
     tft.setCursor(posX, posY);
     tft.print(newValue);
 
     *oldValue = newValue;
   }
 
+}
+
+void drawCell(int width, int height, const char* label, int atX, int atY, int color) {
+  int x = atX * CELL_WIDTH + CELL_PADDING - CELL_BORDER_THICKNESS / 2;
+  int y = atY * CELL_HEIGHT + CELL_PADDING - CELL_BORDER_THICKNESS / 2;
+  int w = (width * CELL_WIDTH) - (CELL_PADDING * 2);
+  int h = (height * CELL_HEIGHT) - CELL_PADDING;
+  int topLineWidth = max(0, (w - 10 * (int)strlen(label)) / 2);
+
+  tft.setFont(&fonts::Font2);
+  tft.setTextSize(1);
+  tft.setTextDatum(textdatum_t::top_center);
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  tft.drawString(label, x + w / 2, y);
+
+  tft.fillRect(x + CELL_BORDER_THICKNESS, y, topLineWidth, CELL_BORDER_THICKNESS, color);
+  tft.fillRect(x + w - topLineWidth, y, topLineWidth, CELL_BORDER_THICKNESS, color);
+  tft.fillRect(x, y, CELL_BORDER_THICKNESS, h, color);
+  tft.fillRect(x + w, y, CELL_BORDER_THICKNESS, h, color);
+  tft.fillRect(x + CELL_BORDER_THICKNESS, y + h - CELL_BORDER_THICKNESS, w - CELL_BORDER_THICKNESS, CELL_BORDER_THICKNESS, color);
 }

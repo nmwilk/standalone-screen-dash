@@ -11,11 +11,17 @@ SimHubReader::~SimHubReader() {
 }
 
 void SimHubReader::tick(unsigned long  nowMs) {
-  int readCount = EEBlue.readBytesUntil('#', buf, MESSAGE_BUF_SIZE);
-  buf[min(readCount, MESSAGE_BUF_SIZE - 1)] = 0x0;
-  //            Serial.println(buf);
-  processMessage(nowMs);
-  memset(buf, 0x0, MESSAGE_BUF_SIZE);
+  if (EEBlue.available()) {
+    int readCount = EEBlue.readBytesUntil('#', buf, MESSAGE_BUF_SIZE);
+    buf[min(readCount, MESSAGE_BUF_SIZE - 1)] = 0x0;
+    //            Serial.println(buf);
+    processMessage(nowMs);
+    memset(buf, 0x0, MESSAGE_BUF_SIZE);
+  }
+}
+
+void SimHubReader::begin() {
+  EEBlue.begin("W7N-DASH");
 }
 
 void SimHubReader::processMessage(unsigned long  nowMs) {

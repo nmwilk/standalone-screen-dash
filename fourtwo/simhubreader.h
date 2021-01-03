@@ -22,6 +22,7 @@ class SimHubReader {
     SimHubReader();
     ~SimHubReader();
 
+    void begin();
     void tick(unsigned long nowMs);
 
   private:
@@ -37,7 +38,7 @@ class SimHubReader {
     void setTcAndAbs();
 
     BluetoothSerial EEBlue;
-    
+
     char gear = 'n';
     int rpm = 0;
     char spd[4] = {'0', '0', '0', 0x0};
