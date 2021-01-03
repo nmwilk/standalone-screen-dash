@@ -68,9 +68,8 @@ void SimHubReader::processMessage(unsigned long  nowMs) {
       gear = buf[1];
       break;
     case 'S':
-      memset(spd, 0x0, 4);
       cleanBufferDigits(2);
-      memcpy(&spd, &buf[1], 3);
+      sscanf(&buf[1], "%d", &spd);
       break;
     case 'D':
       strncpy(floatBuf, &buf[1], FLOAT_BUF_SIZE);
@@ -151,7 +150,7 @@ void SimHubReader::setBrakeBiasLevel(unsigned long ms) {
 void SimHubReader::initProperties() {
   gear = '7';
   rpm = 0;
-  strcpy(spd, "227");
+  spd = 227;
   lapDelta = -10;
   strcpy(lapTime, "18:88.888");
   strcpy(lastLapTime, "--:--.--");
@@ -184,7 +183,7 @@ char* SimHubReader::getLastLapTime() {
 char* SimHubReader::getBestLapTime() {
   return bestLapTime;
 }
-char* SimHubReader::getSpeed() {
+int SimHubReader::getSpeed() {
   return spd;
 }
 
@@ -232,7 +231,7 @@ float SimHubReader::getGapAhead() {
 float SimHubReader::getGapBehind() {
   return gapBehind;
 }
-float SimHubReader::getBrakeBias() {
+int SimHubReader::getBrakeBias() {
   return brakeBias;
 }
 float SimHubReader::getFuelPercentage() {

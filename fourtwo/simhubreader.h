@@ -32,14 +32,15 @@ class SimHubReader {
     char* getLapTime();
     char* getLastLapTime();
     char* getBestLapTime();
-    char* getSpeed();
-
+    
+    int getSpeed();
     int getRpm();
     int getTcLevel();
     int getAbsLevel();
     int getMapLevel();
     int getPosition();
     int getLapNumber();
+    int getBrakeBias();
 
     bool isYellowFlag();
     bool isBlueFlag();
@@ -50,7 +51,6 @@ class SimHubReader {
     float getLapDelta();
     float getGapAhead();
     float getGapBehind();
-    float getBrakeBias();
     float getFuelPercentage();
     float getTyreTempFL();
     float getTyreTempFR();
@@ -81,7 +81,7 @@ class SimHubReader {
     int rpm = 0;
     int lapNumber = 0;
     int position = 0;
-    char spd[4] = {'0', '0', '0', 0x0};
+    int spd =0;
     float lapDelta = -1.23;
     char lapTime[LAP_TIME_STRLEN] = {'0', '0', '.', '0', '0', '.', '0', '0', 0x0};
     char lastLapTime[LAP_TIME_STRLEN] = {'0', '0', '.', '0', '0', '.', '0', '0', 0x0};

@@ -51,11 +51,35 @@ const byte RevColors[8][4] = {
   {RevBoundaries[7], 0,  30, 80}
 };
 
+enum FlagsState {
+  None,
+  Green,
+  Yellow,
+  Blue
+};
 
 CRGB leds[REVS_LED_COUNT + STATUS_LED_COUNT];
 SimHubReader simHubReader;
 
 char drawCharBuf[2];
+FlagsState flagState = None;
+
+char prevLapTime[LAP_TIME_STRLEN];
+char prevBestLapTime[LAP_TIME_STRLEN];
+char prevLastLapTime[LAP_TIME_STRLEN];
+
+int prevTcLevel = -1;
+int prevAbsLevel = -1;
+int prevMapLevel = -1;
+int prevSpeed = 0;
+
+int prevBrakeBias = -1;
+int prevPosition = -1;
+int prevLapNumber = -1;
+
+float prevGapAhead;
+float prevGapBehind;
+float prevLapDelta;
 
 void setup() {
   Serial.begin(115200);
@@ -64,6 +88,10 @@ void setup() {
   setTft(&tft, &panel);
   tft.begin();
   tft.fillScreen(TFT_BLACK);
+
+  memset(prevLapTime, 0x0, LAP_TIME_STRLEN);
+  memset(prevBestLapTime, 0x0, LAP_TIME_STRLEN);
+  memset(prevLastLapTime, 0x0, LAP_TIME_STRLEN);
 
   drawCell(2, 1, "Gaps", 0, 0, TFT_GREEN);
 
@@ -104,34 +132,42 @@ void loop() {
 
   drawGaps();
 
-  drawCellValue(3, 1, simHubReader.getLapTime(), 6, 0, TFT_WHITE, false, -3);
-  drawCellValue(3, 1, simHubReader.getLastLapTime(), 6, 1, TFT_WHITE, false, -3);
-  drawCellValue(3, 1, simHubReader.getBestLapTime(), 6, 2, TFT_WHITE, false, -3);
+  drawLapTimes();
 
-  drawCellValueInt(1, 1, simHubReader.getTcLevel(), 3, 2, TFT_WHITE, true, 0);
-  drawCellValueInt(1, 1, simHubReader.getTcLevel(), 3, 3, TFT_WHITE, true, 0);
-  drawCellValueInt(1, 1, simHubReader.getMapLevel(), 6, 3, TFT_WHITE, true, 0);
-
-  drawCellValueFloat(2, 1, simHubReader.getBrakeBias(), 7, 3, TFT_WHITE, false, 0, 2);
+  drawCellValueInt(1, 1, simHubReader.getTcLevel(), &prevTcLevel, 3, 2, TFT_WHITE, true, 0);
+  drawCellValueInt(1, 1, simHubReader.getAbsLevel(), &prevAbsLevel, 3, 3, TFT_WHITE, true, 0);
+  drawCellValueInt(1, 1, simHubReader.getMapLevel(), &prevMapLevel, 6, 3, TFT_WHITE, true, 0);
 
   drawTyres();
 
-  drawCellValueInt(1, 1, simHubReader.getPosition(), 0, 1, TFT_WHITE, true, 0);
-  drawCellValueInt(1, 1, simHubReader.getLapNumber(), 1, 1, TFT_WHITE, true, 0);
+  drawCellValueInt(2, 1, simHubReader.getBrakeBias(), &prevBrakeBias, 7, 3, TFT_WHITE, false, 0);
+  drawCellValueInt(1, 1, simHubReader.getPosition(), &prevPosition, 0, 1, TFT_WHITE, true, 0);
+  drawCellValueInt(1, 1, simHubReader.getLapNumber(), &prevLapNumber, 1, 1, TFT_WHITE, true, 0);
 
-  drawRevBar(ms, ms % 1000 / 10);
+  drawRevBar(ms, simHubReader.getRpm());
   drawStatusLights(ms);
 
   FastLED.show();
 }
 
+void drawLapTimes() {
+  char* lapTime = simHubReader.getLapTime();
+  char* lastLapTime = simHubReader.getLastLapTime();
+  char* bestLapTime = simHubReader.getBestLapTime();
+
+  drawCellValue(3, 1, lapTime, prevLapTime, 6, 0, TFT_WHITE, false, -3);
+  drawCellValue(3, 1, lastLapTime, prevLastLapTime, 6, 1, TFT_WHITE, false, -3);
+  drawCellValue(3, 1, bestLapTime, prevBestLapTime, 6, 2, TFT_WHITE, false, -3);
+
+}
+
 void drawTyres() {
-  
+
 }
 
 void drawGaps() {
-  drawCellValueFloat(2, 1, simHubReader.getGapAhead(), 0, 0, TFT_WHITE, false, -14, 2);
-  drawCellValueFloat(2, 1, simHubReader.getGapBehind(), 0, 0, TFT_WHITE, false, 12, 2);
+  drawCellValueFloat(2, 1, simHubReader.getGapAhead(), &prevGapAhead, 0, 0, TFT_WHITE, false, -14, 2);
+  drawCellValueFloat(2, 1, simHubReader.getGapBehind(), &prevGapBehind, 0, 0, TFT_WHITE, false, 12, 2);
 }
 
 void drawGear() {
@@ -139,46 +175,36 @@ void drawGear() {
   int x;
   int y;
   fillXY(2, 2, 4, 1, -6, &x, &y);
-  drawChar(newGear, &oldGear, 8, 1, x, y);
+  drawChar(newGear, &oldGear,&fonts::Font8, 1, x, y);
 }
 
 void drawSpeed() {
-  drawCellValue(2, 1, simHubReader.getSpeed(), 2, 1, TFT_WHITE, true, 0);
+  drawCellValueInt(2, 1, simHubReader.getSpeed(), &prevSpeed, 2, 1, TFT_WHITE, true, 0);
 }
 
 void drawLapDelta() {
   float lapDelta = simHubReader.getLapDelta();
-  drawCellValueFloat(2, 1, lapDelta, 4, 0, lapDelta < 0 ? TFT_GREEN : TFT_RED, false, -3, 2);
+  drawCellValueFloat(2, 1, lapDelta, &prevLapDelta, 4, 0, lapDelta < 0 ? TFT_GREEN : TFT_RED, false, -3, 2);
 }
 
-void drawChar(char newValue, char *oldValue, int font, float fontScale, int posX, int posY) {
+void drawChar(char newValue, char *oldValue, const lgfx::BaseFont* font, float fontScale, int posX, int posY) {
   if (*oldValue != newValue) {
     tft.setTextDatum(textdatum_t::middle_center);
-    tft.setTextFont(font);
+    tft.setFont(font);
     tft.setTextSize(fontScale);
 
-    tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    sprintf(drawCharBuf, "%c", newValue);
+    tft.setTextColor(TFT_BLACK);
+    sprintf(drawCharBuf, "%c", *oldValue);
+    tft.drawString(drawCharBuf, posX, posY);
 
+    tft.setTextColor(TFT_WHITE);
+    sprintf(drawCharBuf, "%c", newValue);
+    Serial.println(drawCharBuf);
     tft.drawString(drawCharBuf, posX, posY);
 
     *oldValue = newValue;
   }
 }
-//
-//void drawNumber(int newValue, int *oldValue, const lgfx::BaseFont* font, float fontScale, int posX, int posY) {
-//  if (*oldValue != newValue) {
-//    tft.setTextDatum(textdatum_t::middle_center);
-////    tft.setFont(font);
-//tft.setTextFont(9);
-//    tft.setTextSize(fontScale);
-//
-//    tft.setTextColor(TFT_WHITE, TFT_BLACK);
-//    tft.drawNumber(newValue, posX, posY);
-//
-//    *oldValue = newValue;
-//  }
-//}
 
 long firstRevsChangeTime = 0;
 
@@ -213,9 +239,28 @@ void drawRevBar(long ms, int rpm) {
 }
 
 void drawStatusLights(long ms) {
-  const byte *color = ms % 1000 > 800 ? ColorNone : (ms % 10000 > 5000 ? ColorGreen : (ms % 10000 > 2000 ? ColorYellow : ColorRed));
-  for (int led = 0; led < 16; led++) {
-    leds[led + REVS_LED_COUNT].setRGB(color[0], color[1], color[2]);
+  FlagsState currentState = simHubReader.isBlueFlag() ? Blue : simHubReader.isYellowFlag() ? Yellow : Green;
+  bool changed = currentState != flagState;
+  if (changed) {
+    flagState = currentState;
+    const byte *color;
+    switch (flagState) {
+      case None:
+        color = ColorNone;
+        break;
+      case Yellow:
+        color = ColorYellow;
+        break;
+      case Blue:
+        color = ColorBlue;
+        break;
+      case Green:
+        color = ColorGreen;
+        break;
+    }
+    for (int led = 0; led < 16; led++) {
+      leds[led + REVS_LED_COUNT].setRGB(color[0], color[1], color[2]);
+    }
   }
 }
 
@@ -239,37 +284,57 @@ void drawCell(int width, int height, const char* label, int atX, int atY, int co
   tft.fillRect(x + CELL_BORDER_THICKNESS, y + h - CELL_BORDER_THICKNESS, w - CELL_BORDER_THICKNESS, CELL_BORDER_THICKNESS, color);
 }
 
-void drawCellValue(int width, int height, const char* value, int atX, int atY, int color, bool large, int yOffset) {
-  int x;
-  int y;
-
-  fillXY(width, height, atX, atY, yOffset, &x, &y);
-  configureText(large, color);
-
-  tft.drawString(value, x, y);
-}
-
-void drawCellValueInt(int width, int height, int value, int atX, int atY, int color, bool large, int yOffset) {
-  if (value != NO_INT) {
+void drawCellValue(int width, int height, const char* value, char* prevValue, int atX, int atY, int color, bool large, int yOffset) {
+  if (strcmp(value, prevValue) != 0) {
     int x;
     int y;
 
     fillXY(width, height, atX, atY, yOffset, &x, &y);
+    configureText(large);
 
-    configureText(large, color);
-    tft.drawNumber(value, x, y);
+    tft.setTextColor(TFT_BLACK);
+    tft.drawString(prevValue, x, y);
+
+    tft.setTextColor(color);
+    tft.drawString(value, x, y);
+
+    strcpy(prevValue, value);
   }
 }
 
-void drawCellValueFloat(int width, int height, float value, int atX, int atY, int color, bool large, int yOffset, int decPlaces) {
-  if (value != NO_FLOAT) {
+void drawCellValueInt(int width, int height, int value, int *oldValue, int atX, int atY, int color, bool large, int yOffset) {
+  if (value != *oldValue) {
     int x;
     int y;
 
     fillXY(width, height, atX, atY, yOffset, &x, &y);
-    configureText(large, color);
+    configureText(large);
 
+    tft.setTextColor(TFT_BLACK);
+    tft.drawNumber(*oldValue, x, y);
+
+    tft.setTextColor(color);
+    tft.drawNumber(value, x, y);
+
+    *oldValue = value;
+  }
+}
+
+void drawCellValueFloat(int width, int height, float value, float *oldValue, int atX, int atY, int color, bool large, int yOffset, int decPlaces) {
+  if (value != *oldValue) {
+    int x;
+    int y;
+
+    fillXY(width, height, atX, atY, yOffset, &x, &y);
+    configureText(large);
+
+    tft.setTextColor(TFT_BLACK);
+    tft.drawFloat(*oldValue, decPlaces, x, y + yOffset);
+
+    tft.setTextColor(color);
     tft.drawFloat(value, decPlaces, x, y + yOffset);
+
+    *oldValue = value;
   }
 }
 
@@ -280,9 +345,8 @@ void fillXY(int width, int height, int atX, int atY, int yOffset, int *px, int *
   *py = (atY * CELL_HEIGHT + CELL_PADDING * 4) + h / 2;
 }
 
-void configureText(bool large, int color) {
+void configureText(bool large) {
   tft.setTextFont(large ? 6 : 4);
   tft.setTextSize(1);
   tft.setTextDatum(textdatum_t::middle_center);
-  tft.setTextColor(color, TFT_BLACK);
 }
