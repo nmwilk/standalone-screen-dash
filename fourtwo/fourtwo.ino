@@ -241,7 +241,7 @@ void drawRevBar(long ms, int rpm) {
 long statusChangeTime = 0;
 
 void drawStatusLights(long ms) {
-  FlagsState currentState = !simHubReader.isBlueFlag() ? Blue : simHubReader.isYellowFlag() ? Yellow : Green;
+  FlagsState currentState = simHubReader.isBlueFlag() ? Blue : simHubReader.isYellowFlag() ? Yellow : Green;
   bool changed = currentState != flagState;
   if (changed) {
     flagState = currentState;
