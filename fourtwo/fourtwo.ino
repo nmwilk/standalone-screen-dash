@@ -20,7 +20,7 @@ static lgfx::LGFX_SPI<LGFX_Config> tft;
 static LGFX_Sprite sprite(&tft);
 static lgfx::Panel_ILI9488 panel;
 
-char oldGear = '@';
+char oldGear = '0';
 int oldSpeed = -1;
 int oldTime = -1;
 
@@ -175,7 +175,7 @@ void drawGear() {
   int x;
   int y;
   fillXY(2, 2, 4, 1, -6, &x, &y);
-  drawChar(newGear, &oldGear,&fonts::Font8, 1, x, y);
+  drawChar(newGear, &oldGear, &fonts::Font8, 1, x, y);
 }
 
 void drawSpeed() {
@@ -238,29 +238,32 @@ void drawRevBar(long ms, int rpm) {
   }
 }
 
+long statusChangeTime = 0;
+
 void drawStatusLights(long ms) {
   FlagsState currentState = simHubReader.isBlueFlag() ? Blue : simHubReader.isYellowFlag() ? Yellow : Green;
   bool changed = currentState != flagState;
   if (changed) {
     flagState = currentState;
-    const byte *color;
-    switch (flagState) {
-      case None:
-        color = ColorNone;
-        break;
-      case Yellow:
-        color = ColorYellow;
-        break;
-      case Blue:
-        color = ColorBlue;
-        break;
-      case Green:
-        color = ColorGreen;
-        break;
-    }
-    for (int led = 0; led < 16; led++) {
-      leds[led + REVS_LED_COUNT].setRGB(color[0], color[1], color[2]);
-    }
+    statusChangeTime = ms;
+  }
+  const byte *color;
+  switch (flagState) {
+    case None:
+      color = ColorNone;
+      break;
+    case Yellow:
+      color = (ms - statusChangeTime) % 500 < 250 ? ColorYellow : ColorNone;
+      break;
+    case Blue:
+      color = (ms - statusChangeTime) % 100 < 50 ? ColorBlue : ColorNone;
+      break;
+    case Green:
+      color = ColorGreen;
+      break;
+  }
+  for (int led = 0; led < 16; led++) {
+    leds[led + REVS_LED_COUNT].setRGB(color[0], color[1], color[2]);
   }
 }
 
@@ -268,6 +271,7 @@ void drawCell(int width, int height, const char* label, int atX, int atY, int co
   int x = (atX * CELL_WIDTH + CELL_PADDING - CELL_BORDER_THICKNESS / 2) - CELL_PADDING / 2;
   int y = (atY * CELL_HEIGHT + CELL_PADDING - CELL_BORDER_THICKNESS / 2) - CELL_PADDING / 2;
   int w = (width * CELL_WIDTH) - (CELL_PADDING * 2);
+  w = x + w > SCREEN_WIDTH - 10 ? w + 4 : w;
   int h = (height * CELL_HEIGHT) - CELL_PADDING;
   int topLineWidth = max(0, (w - 10 * (int)strlen(label)) / 2);
 

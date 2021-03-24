@@ -5,7 +5,7 @@
 #ifndef SIMHUB_READER_H
 #define SIMHUB_READER_H
 
-#include "BluetoothSerial.h"
+#include <arduino.h>
 
 #define LAP_TIME_STRLEN 10
 #define FLOAT_BUF_SIZE 6
@@ -74,8 +74,6 @@ class SimHubReader {
     void setFlags();
 
     void initProperties();
-
-    BluetoothSerial EEBlue;
 
     char gear = 'n';
     int rpm = 0;

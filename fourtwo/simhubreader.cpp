@@ -1,9 +1,5 @@
 #include "simhubreader.h"
 
-#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
-#error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
-#endif
-
 SimHubReader::SimHubReader() {
 }
 
@@ -11,8 +7,8 @@ SimHubReader::~SimHubReader() {
 }
 
 void SimHubReader::tick(unsigned long  nowMs) {
-  if (EEBlue.available()) {
-    int readCount = EEBlue.readBytesUntil('#', buf, MESSAGE_BUF_SIZE);
+  if (Serial.available() > 0) {
+    int readCount = Serial.readBytesUntil('#', buf, MESSAGE_BUF_SIZE);
     buf[min(readCount, MESSAGE_BUF_SIZE - 1)] = 0x0;
     //            Serial.println(buf);
     processMessage(nowMs);
@@ -21,8 +17,6 @@ void SimHubReader::tick(unsigned long  nowMs) {
 }
 
 void SimHubReader::begin() {
-  EEBlue.begin("W7N-DASH");
-
   initProperties();
 }
 
