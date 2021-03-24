@@ -98,6 +98,9 @@ void SimHubReader::processMessage(unsigned long  nowMs) {
       memset(bestLapTime, 0, LAP_TIME_STRLEN);
       strncpy(bestLapTime, &buf[1], min(LAP_TIME_STRLEN - 1, (int)strlen(&buf[1])));
       break;
+    case 't':
+      setTyreTemps();
+      break;
     default:
       break;
   }
@@ -116,6 +119,20 @@ void SimHubReader::cleanBufferDigits(int startOffset) {
       buf[i] = 0x0;
       break;
     }
+  }
+}
+
+void SimHubReader::setTyreTemps() {
+  if (strlen(&buf[1]) > 1) {
+    strncpy(tyreTempFL, &buf[1], TYRE_PRESSURE_BUF_SIZE);
+    strncpy(tyreTempFR, &buf[1 + TYRE_PRESSURE_BUF_SIZE * 1], TYRE_PRESSURE_BUF_SIZE);
+    strncpy(tyreTempRL, &buf[1 + TYRE_PRESSURE_BUF_SIZE * 2], TYRE_PRESSURE_BUF_SIZE);
+    strncpy(tyreTempRR, &buf[1 + TYRE_PRESSURE_BUF_SIZE * 3], TYRE_PRESSURE_BUF_SIZE);
+  } else {
+    strncpy(tyreTempFL, "-", 1);
+    strncpy(tyreTempFR, "-", 1);
+    strncpy(tyreTempRL, "-", 1);
+    strncpy(tyreTempRR, "-", 1);
   }
 }
 
@@ -267,16 +284,16 @@ int SimHubReader::getBrakeBias() {
 float SimHubReader::getFuelPercentage() {
   return fuelPercentage;
 }
-float SimHubReader::getTyreTempFL() {
+char* SimHubReader::getTyreTempFL() {
   return tyreTempFL;
 }
-float SimHubReader::getTyreTempFR() {
+char* SimHubReader::getTyreTempFR() {
   return tyreTempFR;
 }
-float SimHubReader::getTyreTempRL() {
+char* SimHubReader::getTyreTempRL() {
   return tyreTempRL;
 }
-float SimHubReader::getTyreTempRR() {
+char* SimHubReader::getTyreTempRR() {
   return tyreTempRR;
 }
 float SimHubReader::getTyrePressureFL() {

@@ -10,6 +10,7 @@
 #define LAP_TIME_STRLEN 10
 #define FLOAT_BUF_SIZE 6
 #define MESSAGE_BUF_SIZE 32
+#define TYRE_PRESSURE_BUF_SIZE 4
 
 #define NO_INT -1
 #define NO_FLOAT 0
@@ -33,6 +34,11 @@ class SimHubReader {
     char* getLastLapTime();
     char* getBestLapTime();
     
+    char* getTyreTempFL();
+    char* getTyreTempFR();
+    char* getTyreTempRL();
+    char* getTyreTempRR();
+
     int getSpeed();
     int getFuel();
     int getRpm();
@@ -53,10 +59,6 @@ class SimHubReader {
     float getGapAhead();
     float getGapBehind();
     float getFuelPercentage();
-    float getTyreTempFL();
-    float getTyreTempFR();
-    float getTyreTempRL();
-    float getTyreTempRR();
     float getTyrePressureFL();
     float getTyrePressureFR();
     float getTyrePressureRL();
@@ -76,6 +78,7 @@ class SimHubReader {
     void setLap();
     void setFlags();
     void setFuel();
+    void setTyreTemps();
 
     void initProperties();
 
@@ -89,6 +92,10 @@ class SimHubReader {
     char lapTime[LAP_TIME_STRLEN] = {'0', '0', '.', '0', '0', '.', '0', '0', 0x0};
     char lastLapTime[LAP_TIME_STRLEN] = {'0', '0', '.', '0', '0', '.', '0', '0', 0x0};
     char bestLapTime[LAP_TIME_STRLEN] = {'0', '0', '.', '0', '0', '.', '0', '0', 0x0};
+    char tyreTempFL[TYRE_PRESSURE_BUF_SIZE + 1];
+    char tyreTempFR[TYRE_PRESSURE_BUF_SIZE + 1];
+    char tyreTempRL[TYRE_PRESSURE_BUF_SIZE + 1];
+    char tyreTempRR[TYRE_PRESSURE_BUF_SIZE + 1];
     float gapAhead = 2.0;
     float gapBehind = 1.9;
     bool yellowFlag = false;
@@ -101,10 +108,6 @@ class SimHubReader {
     bool drsActive = false;
     float brakeBias = 0.0;
     float fuelPercentage;
-    float tyreTempFL;
-    float tyreTempFR;
-    float tyreTempRL;
-    float tyreTempRR;
     float tyrePressureFL;
     float tyrePressureFR;
     float tyrePressureRL;

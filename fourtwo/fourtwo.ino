@@ -69,6 +69,10 @@ FlagsState flagState = None;
 char prevLapTime[LAP_TIME_STRLEN];
 char prevBestLapTime[LAP_TIME_STRLEN];
 char prevLastLapTime[LAP_TIME_STRLEN];
+char prevTyreTempFL[TYRE_PRESSURE_BUF_SIZE + 1];
+char prevTyreTempFR[TYRE_PRESSURE_BUF_SIZE + 1];
+char prevTyreTempRL[TYRE_PRESSURE_BUF_SIZE + 1];
+char prevTyreTempRR[TYRE_PRESSURE_BUF_SIZE + 1];
 
 char prevTcLevel = -1;
 char prevAbsLevel = -1;
@@ -95,6 +99,11 @@ void setup() {
   memset(prevLapTime, 0x0, LAP_TIME_STRLEN);
   memset(prevBestLapTime, 0x0, LAP_TIME_STRLEN);
   memset(prevLastLapTime, 0x0, LAP_TIME_STRLEN);
+
+  memset(prevTyreTempFL, 0x0, TYRE_PRESSURE_BUF_SIZE + 1);
+  memset(prevTyreTempFR, 0x0, TYRE_PRESSURE_BUF_SIZE + 1);
+  memset(prevTyreTempRL, 0x0, TYRE_PRESSURE_BUF_SIZE + 1);
+  memset(prevTyreTempRR, 0x0, TYRE_PRESSURE_BUF_SIZE + 1);
 
   drawCell(2, 1, "Gaps", 0, 0, TFT_GREEN);
 
@@ -165,7 +174,10 @@ void drawLapTimes() {
 }
 
 void drawTyres() {
-
+  drawCellValue(1.25, 1, simHubReader.getTyreTempFL(), prevTyreTempFL, 0.25, 2, TFT_WHITE, false, -2);
+  drawCellValue(1.25, 1, simHubReader.getTyreTempFR(), prevTyreTempFR, 1.5, 2, TFT_WHITE, false, -2);
+  drawCellValue(1.25, 1, simHubReader.getTyreTempRL(), prevTyreTempRL, 0.25, 2.8, TFT_WHITE, false, -8);
+  drawCellValue(1.25, 1, simHubReader.getTyreTempRR(), prevTyreTempRR, 1.5, 2.8, TFT_WHITE, false, -8);
 }
 
 void drawGaps() {
@@ -301,7 +313,7 @@ void drawCell(int width, int height, const char* label, int atX, int atY, int co
   tft.fillRect(x + CELL_BORDER_THICKNESS, y + h - CELL_BORDER_THICKNESS, w - CELL_BORDER_THICKNESS, CELL_BORDER_THICKNESS, color);
 }
 
-void drawCellValue(int width, int height, const char* value, char* prevValue, int atX, int atY, int color, bool large, int yOffset) {
+void drawCellValue(float width, float height, const char* value, char* prevValue, float atX, float atY, int color, bool large, int yOffset) {
   if (strcmp(value, prevValue) != 0) {
     int x;
     int y;
@@ -375,7 +387,7 @@ void drawCellValueFloat(int width, int height, float value, float *oldValue, int
   }
 }
 
-void fillXY(int width, int height, int atX, int atY, int yOffset, int *px, int *py) {
+void fillXY(float width, float height, float atX, float atY, int yOffset, int *px, int *py) {
   int w = (width * CELL_WIDTH) - (CELL_PADDING * 2);
   int h = (height * CELL_HEIGHT);
   *px = ((atX * CELL_WIDTH + CELL_PADDING - CELL_BORDER_THICKNESS / 2) - CELL_PADDING / 2) + w / 2;
