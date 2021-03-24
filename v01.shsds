@@ -1,0 +1,169 @@
+{
+  "AutomaticReconnect": true,
+  "SerialPortName": "COM35",
+  "IsConnecting": false,
+  "IsEnabled": true,
+  "LogIncomingData": false,
+  "IsConnected": true,
+  "BaudRate": 115200,
+  "UpdateMessages": [
+    {
+      "Message": {
+        "Expression": "'#R' + format([CarSettings_CurrentDisplayedRPMPercent], '0')"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 0
+    },
+    {
+      "Message": {
+        "Expression": "'#S' + format([SpeedKmh], '0')"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 0
+    },
+    {
+      "Message": {
+        "Expression": "'#G'+isnull([Gear], '0')"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 0
+    },
+    {
+      "Message": {
+        "Expression": "'#F'+isnull([Flag_Yellow], '0')+isnull([Flag_Blue], '0')+isnull([PitLimiterOn], '0')+isnull([DRSEnabled], '0')+isnull([DRSAvailable], '0')"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 5
+    },
+    {
+      "Message": {
+        "Expression": "'#P' + isnull([DataCorePlugin.GameRunning], '0')"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 0
+    },
+    {
+      "Message": {
+        "Expression": "'#D'+[DeltaToSessionBest]"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 5
+    },
+    {
+      "Message": {
+        "Expression": "'#A'+[PersistantTrackerPlugin.DriverAhead_00_Gap]"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 5
+    },
+    {
+      "Message": {
+        "Expression": "'#B'+[PersistantTrackerPlugin.DriverBehind_00_Gap]"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 5
+    },
+    {
+      "Message": {
+        "Expression": "'#T'+isnull([TCLevel], '-')"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 5
+    },
+    {
+      "Message": {
+        "Expression": "'#Q'+isnull([ABSLevel], '-')"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 5
+    },
+    {
+      "Message": {
+        "Expression": "'#I'+isnull([BrakeBias], '0')"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 0
+    },
+    {
+      "Message": {
+        "Expression": "'#N'+isnull([DataCorePlugin.CurrentGame], '')"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 0
+    },
+    {
+      "Message": {
+        "Expression": "'#L'+right([CurrentLapTime], 4, 8)"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 20
+    },
+    {
+      "Message": {
+        "Expression": "'#K' + right([BestLapTime], 4, 8)"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 0
+    },
+    {
+      "Message": {
+        "Expression": "'#J' + right([LastLapTime], 4, 8)"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 0
+    },
+    {
+      "Message": {
+        "Expression": "'#p' + isnull([Position], ' ')"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 0
+    },
+    {
+      "Message": {
+        "Expression": "'#l' + isnull([CurrentLap], ' ')"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 0
+    },
+    {
+      "Message": {
+        "Expression": "'#m'+isnull([EngineMap], ' ')"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 10
+    },
+    {
+      "Message": {
+        "Expression": "'#f' + isnull(left([FuelPercent], 0, 4), ' ')"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 0
+    },
+    {
+      "Message": {
+        "Expression": "'#t' + format([TyreTemperatureFrontLeft], '00.0') + format([TyreTemperatureFrontRight], '00.0') + format([TyreTemperatureRearLeft], '00.0') + format([TyreTemperatureRearRight], '00.0')"
+      },
+      "IsEnabled": true,
+      "MaximumFrequency": 0
+    }
+  ],
+  "OnConnectMessage": {
+    "Expression": "'#s'"
+  },
+  "OnDisconnectMessage": {
+    "Expression": "'#e'"
+  },
+  "DtrEnable": true,
+  "RtsEnable": true,
+  "EditorExpanded": true,
+  "Name": "Custom Serial device",
+  "Description": "Dash",
+  "LastErrorDate": "2021-03-24T17:55:46.8208964+00:00",
+  "LastErrorMessage": null,
+  "IsFreezed": false,
+  "SettingsBuilder": {
+    "Settings": [],
+    "IsEditMode": false
+  }
+}
