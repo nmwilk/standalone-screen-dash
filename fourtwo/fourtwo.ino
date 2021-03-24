@@ -51,6 +51,8 @@ const byte RevColors[8][4] = {
   {RevBoundaries[7], 0,  30, 80}
 };
 
+const byte* PitLimiterColors[4] = { ColorWhite, ColorNone, ColorRed, ColorBlue };
+
 enum FlagsState {
   None,
   Green,
@@ -68,11 +70,12 @@ char prevLapTime[LAP_TIME_STRLEN];
 char prevBestLapTime[LAP_TIME_STRLEN];
 char prevLastLapTime[LAP_TIME_STRLEN];
 
-int prevTcLevel = -1;
-int prevAbsLevel = -1;
-int prevMapLevel = -1;
+char prevTcLevel = -1;
+char prevAbsLevel = -1;
+char prevMapLevel = -1;
 int prevSpeed = 0;
 
+int prevFuel = -1;
 int prevBrakeBias = -1;
 int prevPosition = -1;
 int prevLapNumber = -1;
@@ -134,12 +137,13 @@ void loop() {
 
   drawLapTimes();
 
-  drawCellValueInt(1, 1, simHubReader.getTcLevel(), &prevTcLevel, 3, 2, TFT_WHITE, true, 0);
-  drawCellValueInt(1, 1, simHubReader.getAbsLevel(), &prevAbsLevel, 3, 3, TFT_WHITE, true, 0);
-  drawCellValueInt(1, 1, simHubReader.getMapLevel(), &prevMapLevel, 6, 3, TFT_WHITE, true, 0);
+  drawCellValueChar(1, 1, simHubReader.getTcLevel(), &prevTcLevel, 3, 2, TFT_WHITE, true, 0);
+  drawCellValueChar(1, 1, simHubReader.getAbsLevel(), &prevAbsLevel, 3, 3, TFT_WHITE, true, 0);
+  drawCellValueChar(1, 1, simHubReader.getMapLevel(), &prevMapLevel, 6, 3, TFT_WHITE, true, 0);
 
   drawTyres();
 
+  drawCellValueInt(2, 1, simHubReader.getFuel(), &prevFuel, 4, 3, TFT_WHITE, false, 0);
   drawCellValueInt(2, 1, simHubReader.getBrakeBias(), &prevBrakeBias, 7, 3, TFT_WHITE, false, 0);
   drawCellValueInt(1, 1, simHubReader.getPosition(), &prevPosition, 0, 1, TFT_WHITE, true, 0);
   drawCellValueInt(1, 1, simHubReader.getLapNumber(), &prevLapNumber, 1, 1, TFT_WHITE, true, 0);
@@ -158,7 +162,6 @@ void drawLapTimes() {
   drawCellValue(3, 1, lapTime, prevLapTime, 6, 0, TFT_WHITE, false, -3);
   drawCellValue(3, 1, lastLapTime, prevLastLapTime, 6, 1, TFT_WHITE, false, -3);
   drawCellValue(3, 1, bestLapTime, prevBestLapTime, 6, 2, TFT_WHITE, false, -3);
-
 }
 
 void drawTyres() {
@@ -199,7 +202,6 @@ void drawChar(char newValue, char *oldValue, const lgfx::BaseFont* font, float f
 
     tft.setTextColor(TFT_WHITE);
     sprintf(drawCharBuf, "%c", newValue);
-    Serial.println(drawCharBuf);
     tft.drawString(drawCharBuf, posX, posY);
 
     *oldValue = newValue;
@@ -209,30 +211,41 @@ void drawChar(char newValue, char *oldValue, const lgfx::BaseFont* font, float f
 long firstRevsChangeTime = 0;
 
 void drawRevBar(long ms, int rpm) {
-  if (rpm > RevsChangeLimit) {
-    if (firstRevsChangeTime == 0) {
-      firstRevsChangeTime = ms;
-    }
+  if (simHubReader.isPitLimiter()) {
+    int tick = (ms % 800) / 200;
+    int colorA = tick;
+    int colorB = (tick + 2) % 4;
     for (int led = 0; led < 8; led++) {
-      if ((ms - firstRevsChangeTime) % 100 < 50) {
-        leds[7 - led].setRGB(RevColors[7][1], RevColors[7][2], RevColors[7][3]);
-        leds[8 + led].setRGB(RevColors[7][1], RevColors[7][2], RevColors[7][3]);
-      } else {
-        leds[7 - led].setRGB(0, 0, 0);
-        leds[8 + led].setRGB(0, 0, 0);
-      }
+      const byte* color = led % 2 == 0 ? PitLimiterColors[colorA] : PitLimiterColors[colorB];
+      leds[7 - led].setRGB(color[0], color[1], color[2]);
+      leds[8 + led].setRGB(color[0], color[1], color[2]);
     }
   } else {
-    firstRevsChangeTime = 0;
-    for (int led = 0; led < 8; led++) {
-      bool draw = rpm >= RevBoundaries[led];
-      if (draw) {
-        leds[led].setRGB(RevColors[led][1], RevColors[led][2], RevColors[led][3]);
-        leds[REVS_LED_COUNT - led - 1].setRGB(RevColors[led][1], RevColors[led][2],
-                                              RevColors[led][3]);
-      } else {
-        leds[led].setRGB(0, 0, 0);
-        leds[REVS_LED_COUNT - led - 1].setRGB(0, 0, 0);
+    if (rpm > RevsChangeLimit) {
+      if (firstRevsChangeTime == 0) {
+        firstRevsChangeTime = ms;
+      }
+      for (int led = 0; led < 8; led++) {
+        if ((ms - firstRevsChangeTime) % 100 < 50) {
+          leds[7 - led].setRGB(RevColors[7][1], RevColors[7][2], RevColors[7][3]);
+          leds[8 + led].setRGB(RevColors[7][1], RevColors[7][2], RevColors[7][3]);
+        } else {
+          leds[7 - led].setRGB(0, 0, 0);
+          leds[8 + led].setRGB(0, 0, 0);
+        }
+      }
+    } else {
+      firstRevsChangeTime = 0;
+      for (int led = 0; led < 8; led++) {
+        bool draw = rpm >= RevBoundaries[led];
+        if (draw) {
+          leds[led].setRGB(RevColors[led][1], RevColors[led][2], RevColors[led][3]);
+          leds[REVS_LED_COUNT - led - 1].setRGB(RevColors[led][1], RevColors[led][2],
+                                                RevColors[led][3]);
+        } else {
+          leds[led].setRGB(0, 0, 0);
+          leds[REVS_LED_COUNT - led - 1].setRGB(0, 0, 0);
+        }
       }
     }
   }
@@ -319,6 +332,26 @@ void drawCellValueInt(int width, int height, int value, int *oldValue, int atX, 
 
     tft.setTextColor(color);
     tft.drawNumber(value, x, y);
+
+    *oldValue = value;
+  }
+}
+
+void drawCellValueChar(int width, int height, char value, char *oldValue, int atX, int atY, int color, bool large, int yOffset) {
+  if (value != *oldValue) {
+    int x;
+    int y;
+
+    fillXY(width, height, atX, atY, yOffset, &x, &y);
+    configureText(large);
+
+    tft.setTextColor(TFT_BLACK);
+    sprintf(drawCharBuf, "%c", *oldValue);
+    tft.drawString(drawCharBuf, x, y);
+
+    tft.setTextColor(color);
+    sprintf(drawCharBuf, "%c", value);
+    tft.drawString(drawCharBuf, x, y);
 
     *oldValue = value;
   }

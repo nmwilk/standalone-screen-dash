@@ -42,8 +42,17 @@ void SimHubReader::processMessage(unsigned long  nowMs) {
     case 'Q':
       setAbsLevel(nowMs);
       break;
-    case 'M':
+    case 'm':
       setMapLevel(nowMs);
+      break;
+    case 'f':
+      setFuel();
+      break;
+    case 'l':
+      setLap();
+      break;
+    case 'p':
+      setPosition(nowMs);
       break;
     case 'I':
       setBrakeBiasLevel(nowMs);
@@ -79,7 +88,15 @@ void SimHubReader::processMessage(unsigned long  nowMs) {
       break;
     case 'L':
       memset(lapTime, 0, LAP_TIME_STRLEN);
-      strncpy(lapTime, &buf[4], min(LAP_TIME_STRLEN - 1, (int)strlen(&buf[4])));
+      strncpy(lapTime, &buf[1], min(LAP_TIME_STRLEN - 1, (int)strlen(&buf[1])));
+      break;
+    case 'J':
+      memset(lastLapTime, 0, LAP_TIME_STRLEN);
+      strncpy(lastLapTime, &buf[1], min(LAP_TIME_STRLEN - 1, (int)strlen(&buf[1])));
+      break;
+    case 'K':
+      memset(bestLapTime, 0, LAP_TIME_STRLEN);
+      strncpy(bestLapTime, &buf[1], min(LAP_TIME_STRLEN - 1, (int)strlen(&buf[1])));
       break;
     default:
       break;
@@ -100,6 +117,16 @@ void SimHubReader::cleanBufferDigits(int startOffset) {
       break;
     }
   }
+}
+
+void SimHubReader::setFuel() {
+  if (strlen(&buf[1]) > 1) {
+    fuel = atoi(&buf[1]);
+  }
+}
+
+void SimHubReader::setLap() {
+  lapNumber = atoi(&buf[1]);
 }
 
 void SimHubReader::cleanBufferLap(int startOffset) {
@@ -126,6 +153,10 @@ void SimHubReader::setFlags() {
   pitLimiter = buf[3] != '0';
 }
 
+void SimHubReader::setPosition(unsigned long ms) {
+  position = atoi(&buf[1]);
+}
+
 void SimHubReader::setTcLevel(unsigned long ms) {
   tcLevel = atoi(&buf[1]);
 }
@@ -133,6 +164,7 @@ void SimHubReader::setTcLevel(unsigned long ms) {
 void SimHubReader::setMapLevel(unsigned long ms) {
   mapLevel = atoi(&buf[1]);
 }
+
 void SimHubReader::setAbsLevel(unsigned long ms) {
   absLevel = abs(atoi(&buf[1]));
 }
@@ -145,6 +177,7 @@ void SimHubReader::initProperties() {
   gear = '7';
   rpm = 0;
   spd = 227;
+  fuel = 0;
   lapDelta = -10;
   strcpy(lapTime, "18:88.888");
   strcpy(lastLapTime, "--:--.--");
@@ -181,17 +214,20 @@ int SimHubReader::getSpeed() {
   return spd;
 }
 
+int SimHubReader::getFuel() {
+  return fuel;
+}
 int SimHubReader::getRpm() {
   return rpm;
 }
-int SimHubReader::getTcLevel() {
-  return tcLevel;
+char SimHubReader::getTcLevel() {
+  return tcLevel > 0 ? tcLevel : '-';
 }
-int SimHubReader::getAbsLevel() {
-  return absLevel;
+char SimHubReader::getAbsLevel() {
+  return absLevel > 0 ? absLevel : '-';
 }
-int SimHubReader::getMapLevel() {
-  return mapLevel;
+char SimHubReader::getMapLevel() {
+  return mapLevel > 0 ? mapLevel : '-';
 }
 
 int SimHubReader::getPosition() {
