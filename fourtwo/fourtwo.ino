@@ -152,10 +152,10 @@ void loop() {
 
   drawTyres();
 
-  drawCellValueInt(2, 1, simHubReader.getFuel(), &prevFuel, 4, 3, TFT_WHITE, false, 0);
-  drawCellValueInt(2, 1, simHubReader.getBrakeBias(), &prevBrakeBias, 7, 3, TFT_WHITE, false, 0);
-  drawCellValueInt(1, 1, simHubReader.getPosition(), &prevPosition, 0, 1, TFT_WHITE, true, 0);
-  drawCellValueInt(1, 1, simHubReader.getLapNumber(), &prevLapNumber, 1, 1, TFT_WHITE, true, 0);
+  drawCellValueInt(2, 1, simHubReader.getFuel(), &prevFuel, 4, 3, TFT_WHITE, true, 0);
+  drawCellValueInt(2, 1, simHubReader.getBrakeBias(), &prevBrakeBias, 7, 3, TFT_WHITE, true, 0);
+  drawCellValueInt(1, 1, simHubReader.getPosition(), &prevPosition, 0, 1, TFT_WHITE, false, 0);
+  drawCellValueInt(1, 1, simHubReader.getLapNumber(), &prevLapNumber, 1, 1, TFT_WHITE, false, 0);
 
   drawRevBar(ms, simHubReader.getRpm());
   drawStatusLights(ms);

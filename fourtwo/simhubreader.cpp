@@ -238,13 +238,13 @@ int SimHubReader::getRpm() {
   return rpm;
 }
 char SimHubReader::getTcLevel() {
-  return tcLevel > 0 ? tcLevel : '-';
+  return tcLevel > 0 ? 48 + tcLevel : '-';
 }
 char SimHubReader::getAbsLevel() {
-  return absLevel > 0 ? absLevel : '-';
+  return absLevel > 0 ? 48+absLevel : '-';
 }
 char SimHubReader::getMapLevel() {
-  return mapLevel > 0 ? mapLevel : '-';
+  return mapLevel > 0 ? 48+mapLevel : '-';
 }
 
 int SimHubReader::getPosition() {
